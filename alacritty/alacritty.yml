@@ -102,13 +102,13 @@ tabspaces: 8
 font:
   size: 10.0
   normal:
-    family: SFMono
-    style: Medium
+    family: Consolas
+    # style: Medium
   bold:
-    family: SFMono
+    family: Consolas
     style: bold
   italic:
-    family: SFMono
+    family: Consolas
     style: italic
 
   # Offset is the extra space around each character. `offset.y` can be thought of
@@ -173,7 +173,6 @@ colors:
     magenta: '0xc678dd'
     cyan:    '0x56b6c2'
     white:   '0xffffff'
-
 # Visual Bell
 #
 # Any time the BEL code is received, Alacritty "rings" the visual bell. Once
