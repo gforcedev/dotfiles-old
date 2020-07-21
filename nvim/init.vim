@@ -16,6 +16,7 @@ Plug 'lervag/vimtex'
 Plug 'mboughaba/i3config.vim'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'w0rp/ale'
+Plug 'honza/vim-snippets'
 Plug 'mattn/emmet-vim'
 Plug 'fatih/vim-go'
 
@@ -26,8 +27,9 @@ Plug 'tpope/vim-fugitive'
 Plug 'bling/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'chrisbra/colorizer'
-Plug 'shime/vim-livedown'
-Plug 'shougo/denite.nvim'
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() } }
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
 Plug 'junegunn/goyo.vim'
 
 " Text editing
@@ -100,6 +102,7 @@ set wrap linebreak nolist
 :  autocmd InsertLeave * set nocursorline
 :augroup END
 
+" Line numbers
 augroup numbertoggle
   autocmd!
   autocmd BufEnter,FocusGained,InsertLeave * set relativenumber
@@ -172,10 +175,6 @@ let NERDTreeMouseMode   = 3             " Single click to open any dir/file
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | endif
 
-" --- livedown ---
-let g:livedown_autorun = 1
-let g:livedown_browser = "google-chrome-stable"
-
 " --- Keybinds ---
 " Helps moving around windows
 map <silent> <C-j> <C-W>j
@@ -210,17 +209,6 @@ autocmd BufWinLeave * call clearmatches()
 
 set nohlsearch
 
-" use <tab> for trigger completion and navigate to the next complete item
-function! s:check_back_space() abort
-  let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =~ '\s'
-endfunction
-
-inoremap <silent><expr> <Tab>
-      \ pumvisible() ? "\<C-n>" :
-      \ <SID>check_back_space() ? "\<Tab>" :
-      \ coc#refresh()
-
 " Toggle tree
 map <silent> <leader>nn :NERDTreeToggle<cr>
 
@@ -231,75 +219,63 @@ set clipboard+=unnamedplus
 nnoremap x "_x
 vnoremap x "_x
 
+" markdown preview config
+let g:mkdp_auto_start = 1
+let g:mkdp_auto_close = 0
+let g:mkdp_browser = 'google-chrome'
+
 " Use LaTeX rather than plaintex
 let g:polyglot_disabled = ['latex']
 let g:tex_flavor = 'latex'
 let g:vimtex_view_general_viewer = 'zathura'
 
-" Latex bindings for adding a file to master
-" nnoremap <leader>af :norm "byyI\include{<Esc>A}<Esc>k<leader>c<leader>j:e @b.tex
+" don't open a split to show warnings
+let g:vimtex_quickfix_open_on_warning = 0
 
 " Latex bindings for inkscape-figures
 inoremap <C-f> <Esc>: silent exec '.!inkscape-figures create "'.getline('.').'" "'.b:vimtex.root.'/figures/"'<CR><CR>:w<CR>
 nnoremap <C-f> : silent exec '!inkscape-figures edit "'.b:vimtex.root.'/figures/" > /dev/null 2>&1 &'<CR><CR>:redraw!<CR>
 
-" denite
-" from https://github.com/sodiumjoe/dotfiles/blob/master/vimrc#L213
-
-call denite#custom#option('default', {
-      \ 'prompt': '❯'
-      \ })
-
-call denite#custom#var('file/rec', 'command', ['rg', '--files', '--glob', '!.git'])
-call denite#custom#var('grep', 'command', ['rg'])
-call denite#custom#var('grep', 'default_opts',
-      \ ['--hidden', '--vimgrep', '--smart-case'])
-call denite#custom#var('grep', 'recursive_opts', [])
-call denite#custom#var('grep', 'pattern_opt', ['--regexp'])
-call denite#custom#var('grep', 'separator', ['--'])
-call denite#custom#var('grep', 'final_opts', [])
-
-autocmd FileType denite call s:denite_settings()
-
-function! s:denite_settings() abort
-  nnoremap <silent><buffer><expr> <CR>
-        \ denite#do_map('do_action')
-  nnoremap <silent><buffer><expr> <C-v>
-        \ denite#do_map('do_action', 'vsplit')
-  nnoremap <silent><buffer><expr> d
-        \ denite#do_map('do_action', 'delete')
-  nnoremap <silent><buffer><expr> p
-        \ denite#do_map('do_action', 'preview')
-  nnoremap <silent><buffer><expr> <Esc>
-        \ denite#do_map('quit')
-  nnoremap <silent><buffer><expr> q
-        \ denite#do_map('quit')
-  nnoremap <silent><buffer><expr> i
-        \ denite#do_map('open_filter_buffer')
-endfunction
-
-autocmd FileType denite-filter call s:denite_filter_settings()
-
-function! s:denite_filter_settings() abort
-  nmap <silent><buffer> <Esc> <Plug>(denite_filter_quit)
-endfunction
-
-" all files on system
-nnoremap <C-p> :<C-u>Denite file/rec -start-filter<CR>
+" default fzf command (currently all files in the git root)
+nnoremap <C-p> :GFiles<CR>
 " currently open buffers
-nnoremap <leader>s :<C-u>Denite buffer<CR>
-" word under cursor in current dir
-nnoremap <leader>8 :<C-u>DeniteCursorWord grep:.<CR>
-" prompt for pattern in current dir
-nnoremap <leader>/ :<C-u>Denite grep:.<CR>
-" prompt for pattern in dir of current buffer's file
-nnoremap <leader><Space>/ :<C-u>DeniteBufferDir grep:.<CR>
-" files in current buffer's directory
-nnoremap <leader>d :<C-u>DeniteBufferDir file/rec -start-filter<CR>
-" this is clipboard history because of my xclip integration
-nnoremap <leader><C-r> :<C-u>Denite register:.<CR>
-" git status
-nnoremap <leader>g :<C-u>Denite gitstatus<CR>
+nnoremap <leader>; :Buffers<CR>
 
-hi link deniteMatchedChar Special
+" ---coc.nvim---
 
+" TextEdit might fail if hidden is not set.
+set hidden
+
+" Some servers have issues with backup files, see #649.
+set nobackup
+set nowritebackup
+
+" Give more space for displaying messages.
+set cmdheight=2
+
+" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
+" delays and poor user experience.
+set updatetime=300
+
+" Use tab for trigger completion with characters ahead and navigate.
+" NOTE: Use command ':verbose imap <tab>' to make sure tab is not mapped by
+" other plugin before putting this into your config.
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+" Use <c-space> to trigger completion.
+inoremap <silent><expr> <c-space> coc#refresh()
+
+" GoTo code navigation.
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
